@@ -40,14 +40,14 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   # Those runtime dependencies will be propagated to environments importing this derivation
-  propagatedNativeBuildInputs = [
-    hwloc
-  ]
-  ++ lib.optional finalAttrs.enableSimgrid simgrid
-  ++ lib.optional finalAttrs.enableMPI mpi;
+  propagatedNativeBuildInputs =
+    [
+      hwloc
+    ]
+    ++ lib.optional finalAttrs.enableSimgrid simgrid
+    ++ lib.optional finalAttrs.enableMPI mpi;
 
-  buildInputs =
-  [
+  buildInputs = [
     libuuid
     libX11
     fftw
@@ -59,15 +59,21 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   # Those libraries dependencies will be propagated to environments importing this derivation
-  propagatedBuildInputs = [
-    hwloc
-  ]
-  ++ lib.optional finalAttrs.enableSimgrid simgrid
-  ++ lib.optional finalAttrs.enableMPI mpi;
+  propagatedBuildInputs =
+    [
+      hwloc
+    ]
+    ++ lib.optional finalAttrs.enableSimgrid simgrid
+    ++ lib.optional finalAttrs.enableMPI mpi;
 
-  configureFlags = [ ]
-  ++ lib.optional finalAttrs.enableSimgrid "--enable-simgrid"
-  ++ lib.optional finalAttrs.enableMPI [ "--enable-mpi" "--enable-mpi-check" "--disable-shared" ]; # Last arg enables static linking which is mandatory for smpi
+  configureFlags =
+    [ ]
+    ++ lib.optional finalAttrs.enableSimgrid "--enable-simgrid"
+    ++ lib.optional finalAttrs.enableMPI [
+      "--enable-mpi"
+      "--enable-mpi-check"
+      "--disable-shared"
+    ]; # Last arg enables static linking which is mandatory for smpi
 
   # Some installation scripts use /bin/bash which isn't available in nix
   patches = [ ./nix-starpu-shebang.patch ];
