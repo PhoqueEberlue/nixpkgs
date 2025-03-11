@@ -16,10 +16,12 @@
   automake,
   simgrid ? null, # Can be null because Simgrid is optional
   mpi ? null, # Can be null because MPI support is optional
+  cudaPackages ? null, # Can be null because CUDA support is optional
 
   # Options
   enableSimgrid ? false,
   enableMPI ? false,
+  enableCUDA ? false,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -28,6 +30,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   inherit enableSimgrid;
   inherit enableMPI;
+  inherit enableCUDA;
 
   src = fetchzip {
     url = "https://files.inria.fr/starpu/starpu-${finalAttrs.version}/starpu-${finalAttrs.version}.tar.gz";
@@ -35,36 +38,30 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   # Runtime build dependencies
-  nativeBuildInputs = [
-    pkg-config
-  ];
-
-  # Those runtime dependencies will be propagated to environments importing this derivation
-  propagatedNativeBuildInputs =
+  nativeBuildInputs =
     [
+      pkg-config
       hwloc
     ]
     ++ lib.optional finalAttrs.enableSimgrid simgrid
-    ++ lib.optional finalAttrs.enableMPI mpi;
+    ++ lib.optional finalAttrs.enableMPI mpi
+    ++ lib.optional finalAttrs.enableCUDA cudaPackages.cudatoolkit;
 
-  buildInputs = [
-    libuuid
-    libX11
-    fftw
-    fftwFloat
-    pkg-config
-    libtool
-    autoconf
-    automake
-  ];
-
-  # Those libraries dependencies will be propagated to environments importing this derivation
-  propagatedBuildInputs =
+  buildInputs =
     [
+      libuuid
+      libX11
+      fftw
+      fftwFloat
+      pkg-config
+      libtool
+      autoconf
+      automake
       hwloc
     ]
     ++ lib.optional finalAttrs.enableSimgrid simgrid
-    ++ lib.optional finalAttrs.enableMPI mpi;
+    ++ lib.optional finalAttrs.enableMPI mpi
+    ++ lib.optional finalAttrs.enableCUDA cudaPackages.cudatoolkit;
 
   configureFlags =
     [ ]
@@ -73,10 +70,14 @@ stdenv.mkDerivation (finalAttrs: {
       "--enable-mpi"
       "--enable-mpi-check"
       "--disable-shared"
-    ]; # Last arg enables static linking which is mandatory for smpi
+    ];
+  # Last arg enables static linking which is mandatory for smpi
+  # No need to add flags for CUDA, it should be detected by ./configure
 
-  # Some installation scripts use /bin/bash which isn't available in nix
-  patches = [ ./nix-starpu-shebang.patch ];
+  # Patch shebangs for those two build time scripts
+  postConfigure = ''
+    patchShebangs --build doc/extractHeadline.sh doc/fixLinks.sh
+  '';
 
   enableParallelBuilding = true;
   # doCheck = true;
